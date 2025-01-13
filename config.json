@@ -1,0 +1,16 @@
+{
+  "path": {
+    "external_storage": "chat_data",
+    "google_drive": "chat_data",
+    "log": "/log",
+    "tmp": "/tmp",
+    "src": "/src",
+    "root": ".",
+    "endpoints": "."
+  },
+  "now": "",
+
+    "host": "127.0.0.1",
+    "ports": [ "3000" ]
+
+}
