@@ -1,17 +1,20 @@
-## \file /src/fast_api/main.py
+## \file /src/fast_api/main_rpc.py
 # -*- coding: utf-8 -*-
 #! venv/bin/python/python3.12
 
 """
-.. module:: src.fast_api.main 
+.. module:: src.fast_api.main_rpc
     :platform: Windows, Unix
-    :synopsis: Управаление параметрами Fast Api сервера
+    :synopsis: XML-RPC client for managing the Fast API server
 
 """
 
 import sys
 import header  # <-- Обязательный импорт
-from src.fast_api.fast_api import CommandHandler, logger
+import argparse
+from xmlrpc.client import ServerProxy
+from src.fast_api.fast_api_rpc import CommandHandler, logger
+
 
 
 def display_menu():
@@ -30,6 +33,7 @@ def display_menu():
 def main():
     """Основная функция управления сервером."""
     command_handler = CommandHandler()
+    rpc_client = ServerProxy("http://localhost:9000", allow_none=True)
     while True:
         display_menu()
         try:
@@ -47,14 +51,14 @@ def main():
                 try:
                     port = int(parts[1])
                     host = input("Enter host address (default: 127.0.0.1): ").strip() or "127.0.0.1"
-                    command_handler.start_server(port=port, host=host)
+                    rpc_client.start_server(port, host)
                 except ValueError:
                     print("Invalid port number.")
                 except Exception as ex:
                   logger.error(f"An error occurred:", ex, exc_info=True)
 
             elif command == "status":
-                command_handler.status_servers()
+                rpc_client.status_servers()
             
             elif command == "stop":
                if len(parts) != 2:
@@ -62,14 +66,14 @@ def main():
                    continue
                try:
                     port = int(parts[1])
-                    command_handler.stop_server(port=port)
+                    rpc_client.stop_server(port)
                except ValueError:
                    print("Invalid port number.")
                except Exception as ex:
                   logger.error(f"An error occurred:", ex, exc_info=True)
             
             elif command == "stop_all":
-               command_handler.stop_all_servers()
+               rpc_client.stop_all_servers()
             
             elif command == "add_route":
                 if len(parts) != 2:
@@ -78,18 +82,22 @@ def main():
                 path = parts[1]
                 methods = input("Enter HTTP methods (comma-separated, default: GET): ").strip().upper() or "GET"
                 methods = [method.strip() for method in methods.split(",")]
-                command_handler.add_new_route(path=path, func=lambda: {"message": "Hello from the new route"}, methods=methods)
+                rpc_client.add_new_route(path, "lambda: {\"message\": \"Hello from the new route\"}", methods)
+            
+            elif command == "get_url":
+                url = rpc_client.get_ngrok_url()
+                print(f"Ngrok URL: {url}")
 
             elif command == "shutdown":
-                command_handler.stop_all_servers()
-                print("Shutting down all servers.")
+                rpc_client.shutdown()
+                print("Shutting down the client")
                 sys.exit(0)
 
             elif command == "help":
                 display_menu()
 
             elif command == "exit":
-                print("Exiting the program.")
+                print("Exiting the client.")
                 sys.exit(0)
             
             else:
